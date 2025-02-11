@@ -2,8 +2,8 @@ use clap::Parser;
 use std::process;
 
 mod cli;
-mod parser;
 mod file_ops;
+mod parser;
 
 use cli::Cli;
 use file_ops::{read_schema_file, write_tables_to_file};
@@ -22,9 +22,7 @@ fn main() {
 
   let table_definitions = parse_tables(&contents);
 
-  let available_tables: Vec<_> = table_definitions.iter()
-    .map(|td| td.name.clone())
-    .collect();
+  let available_tables: Vec<_> = table_definitions.iter().map(|td| td.name.clone()).collect();
 
   let requested = table_definitions
     .into_iter()

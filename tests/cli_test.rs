@@ -1,6 +1,6 @@
+use ais::{file_ops::*, parser::parse_tables};
 use std::fs;
 use tempfile::tempdir;
-use ais::{parser::parse_tables, file_ops::*};
 
 pub const TEST_SCHEMA: &str = r#"ActiveRecord::Schema[7.0].define(version: 2024_02_11_123456) do
   create_table "contacts" do |t|

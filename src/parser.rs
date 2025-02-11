@@ -7,8 +7,7 @@ pub struct TableDefinition {
 }
 
 pub fn parse_tables(schema: &str) -> Vec<TableDefinition> {
-  let re = Regex::new(r#"(?s)create_table\s+"([^"]+)"(.*?)end"#)
-    .expect("Invalid regex pattern");
+  let re = Regex::new(r#"(?s)create_table\s+"([^"]+)"(.*?)end"#).expect("Invalid regex pattern");
 
   let mut tables = Vec::new();
 

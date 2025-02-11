@@ -1,6 +1,6 @@
+use anyhow::Result;
 use std::fs;
 use std::io::Write;
-use anyhow::Result;
 
 use crate::parser::TableDefinition;
 
