@@ -24,10 +24,7 @@ fn main() {
 
   let available_tables: Vec<_> = table_definitions.iter().map(|td| td.name.clone()).collect();
 
-  let requested = table_definitions
-    .into_iter()
-    .filter(|td| cli.tables.contains(&td.name))
-    .collect::<Vec<_>>();
+  let requested = table_definitions.into_iter().filter(|td| cli.tables.contains(&td.name)).collect::<Vec<_>>();
 
   if requested.is_empty() {
     eprintln!("No matching tables found. Available tables:");
@@ -42,9 +39,5 @@ fn main() {
     process::exit(1);
   }
 
-  println!(
-    "Successfully wrote {} table(s) to '{}'.",
-    requested.len(),
-    cli.output_path
-  );
+  println!("Successfully wrote {} table(s) to '{}'.", requested.len(), cli.output_path);
 }

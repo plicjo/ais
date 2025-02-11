@@ -23,7 +23,9 @@ Useful for providing context to AI assistants or creating smaller schema files f
 3. Build and install:
    ```bash
    cargo install --path .
+   export PATH="$HOME/.cargo/bin:$PATH"
    ```
+4. Open a new terminal and run `ais` to verify the installation
 
 ## Usage
 
