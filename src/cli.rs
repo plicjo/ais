@@ -2,7 +2,7 @@ use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[command(name = "ais")]
-#[command(about = "Extract table definitions from a Rails schema.rb")]
+#[command(about = "Extract table and view definitions from a Rails schema.rb")]
 pub struct Cli {
   /// Schema file path (default: db/schema.rb)
   #[arg(short = 'f', long = "file", default_value = "db/schema.rb")]

@@ -21,23 +21,48 @@ fn main() {
   };
 
   let table_definitions = parse_tables(&contents);
+  let available_definitions: Vec<_> = table_definitions.iter().map(|td| td.name.clone()).collect();
 
-  let available_tables: Vec<_> = table_definitions.iter().map(|td| td.name.clone()).collect();
+  let mut successful = Vec::new();
+  let mut not_found = Vec::new();
 
-  let requested = table_definitions.into_iter().filter(|td| cli.tables.contains(&td.name)).collect::<Vec<_>>();
+  // Sort requested tables into successful and not found
+  for requested_name in &cli.tables {
+    if table_definitions.iter().any(|td| &td.name == requested_name) {
+      successful.push(requested_name);
+    } else {
+      not_found.push(requested_name);
+    }
+  }
 
-  if requested.is_empty() {
-    eprintln!("No matching tables found. Available tables:");
-    for table_name in available_tables {
-      eprintln!("  - {}", table_name);
+  if successful.is_empty() {
+    eprintln!("No matching tables or views found. Available tables and views:");
+    for name in available_definitions {
+      eprintln!("  - {}", name);
     }
     process::exit(1);
   }
+
+  let requested = table_definitions.into_iter().filter(|td| successful.contains(&&td.name)).collect::<Vec<_>>();
 
   if let Err(e) = write_tables_to_file(&requested, &cli.output_path) {
     eprintln!("Error writing to '{}': {}", cli.output_path, e);
     process::exit(1);
   }
 
-  println!("Successfully wrote {} table(s) to '{}'.", requested.len(), cli.output_path);
+  // Print successful extractions
+  println!("Successfully extracted:");
+  for name in successful {
+    println!("  - {}", name);
+  }
+
+  // Print tables/views that weren't found
+  if !not_found.is_empty() {
+    println!("\nThe following tables/views were not found:");
+    for name in not_found {
+      println!("  - {}", name);
+    }
+  }
+
+  println!("\nWrote {} table(s)/view(s) to '{}'.", requested.len(), cli.output_path);
 }

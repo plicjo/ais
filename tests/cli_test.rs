@@ -84,3 +84,90 @@ fn test_cli_error_handling() {
   let result = read_schema_file(nonexistent_path.to_str().unwrap());
   assert!(result.is_err());
 }
+
+#[test]
+fn test_mixed_existing_and_nonexistent_tables() {
+  let (dir, schema_path) = common::setup_test_schema();
+
+  // Read and parse
+  let contents = read_schema_file(schema_path.to_str().unwrap()).unwrap();
+  let tables = parse_tables(&contents);
+
+  // Request mix of existing and non-existing tables
+  let requested_tables = vec!["contacts".to_string(), "nonexistent".to_string()];
+  let filtered: Vec<_> = tables.into_iter().filter(|td| requested_tables.contains(&td.name)).collect();
+
+  // Verify we only got the existing table
+  assert_eq!(filtered.len(), 1);
+  assert_eq!(filtered[0].name, "contacts");
+
+  // Write output
+  let output_path = dir.path().join("output.rb");
+  write_tables_to_file(&filtered, output_path.to_str().unwrap()).unwrap();
+
+  // Verify output only contains the existing table
+  let output_content = fs::read_to_string(output_path).unwrap();
+  assert!(output_content.contains("create_table \"contacts\""));
+  assert!(!output_content.contains("nonexistent"));
+}
+
+#[test]
+fn test_list_available_tables() {
+  let (_dir, schema_path) = common::setup_test_schema();
+
+  // Read and parse
+  let contents = read_schema_file(schema_path.to_str().unwrap()).unwrap();
+  let tables = parse_tables(&contents);
+
+  // Verify all expected tables and views are present
+  let table_names: Vec<_> = tables.iter().map(|td| td.name.clone()).collect();
+  assert!(table_names.contains(&"contacts".to_string()));
+  assert!(table_names.contains(&"matters".to_string()));
+  assert!(table_names.contains(&"notes".to_string()));
+  assert!(table_names.contains(&"charges".to_string()));
+
+  // Verify the exact number of tables/views
+  assert_eq!(table_names.len(), 4, "Expected exactly 4 tables/views");
+}
+
+#[test]
+fn test_no_matching_tables() {
+  let (_dir, schema_path) = common::setup_test_schema();
+
+  // Read and parse
+  let contents = read_schema_file(schema_path.to_str().unwrap()).unwrap();
+  let tables = parse_tables(&contents);
+
+  // Request only non-existing tables
+  let requested_tables = vec!["nonexistent1".to_string(), "nonexistent2".to_string()];
+  let filtered: Vec<_> = tables.into_iter().filter(|td| requested_tables.contains(&td.name)).collect();
+
+  // Verify we got no tables
+  assert_eq!(filtered.len(), 0);
+}
+
+#[test]
+fn test_extract_single_view() {
+  let (dir, schema_path) = common::setup_test_schema();
+
+  // Read and parse
+  let contents = read_schema_file(schema_path.to_str().unwrap()).unwrap();
+  let tables = parse_tables(&contents);
+
+  // Filter for just the view
+  let requested_views = vec!["charges".to_string()];
+  let filtered: Vec<_> = tables.into_iter().filter(|td| requested_views.contains(&td.name)).collect();
+
+  // Verify we got exactly one view
+  assert_eq!(filtered.len(), 1, "Expected exactly one view");
+  assert_eq!(filtered[0].name, "charges");
+
+  // Write output
+  let output_path = dir.path().join("output.rb");
+  write_tables_to_file(&filtered, output_path.to_str().unwrap()).unwrap();
+
+  // Verify output contains only the view
+  let output_content = fs::read_to_string(output_path).unwrap();
+  assert!(output_content.contains("create_view \"charges\""));
+  assert!(!output_content.contains("create_table"));
+}
