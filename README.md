@@ -23,6 +23,9 @@ Useful for providing context to AI assistants or creating smaller schema files f
 3. Build and install:
    ```bash
    cargo install --path .
+   ```
+4. Place this in your .bashrc or .zshrc to add the binary to your PATH:
+   ```bash
    export PATH="$HOME/.cargo/bin:$PATH"
    ```
 4. Open a new terminal and run `ais` to verify the installation
