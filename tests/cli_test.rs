@@ -171,3 +171,38 @@ fn test_extract_single_view() {
   assert!(output_content.contains("create_view \"charges\""));
   assert!(!output_content.contains("create_table"));
 }
+
+#[test]
+fn test_parse_table_with_schema_variations() {
+  let test_schema = r#"ActiveRecord::Schema[7.0].define(version: 2025_02_11_123456) do
+        create_table "contacts" do |t|
+            t.string "email"
+        end
+
+        create_table(:users, force: :cascade) do |t|
+            t.string "name"
+        end
+
+        create_table "members", force: :cascade do |t|
+            t.string "title"
+        end
+
+        create_table(:tasks) do |t|
+            t.string "description"
+        end
+    end"#;
+
+  let (_dir, schema_path) = common::setup_test_schema();
+  fs::write(&schema_path, test_schema).unwrap();
+
+  // Read and parse
+  let contents = read_schema_file(schema_path.to_str().unwrap()).unwrap();
+  let tables = parse_tables(&contents);
+
+  // Verify all table variations are parsed correctly
+  let table_names: Vec<_> = tables.iter().map(|td| td.name.clone()).collect();
+  assert!(table_names.contains(&"contacts".to_string()));
+  assert!(table_names.contains(&"users".to_string()));
+  assert!(table_names.contains(&"members".to_string()));
+  assert!(table_names.contains(&"tasks".to_string()));
+}
