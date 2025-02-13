@@ -231,4 +231,52 @@ fn test_parse_complex_table_definition() {
   assert!(tables[0].content.contains("id: :uuid"));
   assert!(tables[0].content.contains("force: :cascade"));
   assert!(tables[0].content.contains("index [\"related_id\"]"));
+  assert!(tables[0].content.contains("create_table \"test_table\""));
+}
+
+#[test]
+fn test_parse_table_with_end_in_name() {
+  let schema_with_vendor = r#"
+    ActiveRecord::Schema[7.0].define(version: 2025_02_11_123456) do
+      create_table "vendor_invoices", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+          t.string "description"
+          t.date "invoice_date", null: false
+          t.integer "bill_amount_cents", null: false
+          t.uuid "vendor_id", null: false
+          t.index ["vendor_id"], name: "index_vendor_invoices_on_vendor_id"
+      end
+    end
+    "#;
+
+  let tables = ais::parser::parse_tables(schema_with_vendor);
+
+  // We should capture the entire block, not truncate at "vend"
+  assert_eq!(tables.len(), 1);
+  assert_eq!(tables[0].name, "vendor_invoices");
+  assert!(tables[0].content.contains("t.index [\"vendor_id\"], name: \"index_vendor_invoices_on_vendor_id\""));
+  assert!(tables[0].content.contains("default: -> { \"gen_random_uuid()\" }"));
+}
+
+#[test]
+fn test_parse_table_with_arrow_syntax() {
+  let test_schema = r#"ActiveRecord::Schema[7.0].define(version: 2025_02_11_123456) do
+        create_table(:test_arrows, id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade) do |t|
+            t.integer "some_column", null: false
+        end
+    end"#;
+
+  let (_dir, schema_path) = common::setup_test_schema();
+  fs::write(&schema_path, test_schema).unwrap();
+
+  // Read and parse
+  let contents = read_schema_file(schema_path.to_str().unwrap()).unwrap();
+  let tables = parse_tables(&contents);
+
+  // We should find exactly one table
+  assert_eq!(tables.len(), 1);
+  assert_eq!(tables[0].name, "test_arrows");
+
+  // Verify the arrow syntax was captured
+  assert!(tables[0].content.contains("default: -> { \"gen_random_uuid()\" }"));
+  assert!(tables[0].content.contains("create_table(:test_arrows"));
 }
