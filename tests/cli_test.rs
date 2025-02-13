@@ -206,3 +206,29 @@ fn test_parse_table_with_schema_variations() {
   assert!(table_names.contains(&"members".to_string()));
   assert!(table_names.contains(&"tasks".to_string()));
 }
+
+#[test]
+fn test_parse_complex_table_definition() {
+  let test_schema = r#"ActiveRecord::Schema[7.0].define(version: 2025_02_11_123456) do
+        create_table "test_table", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+            t.uuid "related_id", null: false
+            t.string "name"
+            t.integer "amount_cents", null: false
+            t.index ["related_id"], name: "index_test_table_on_related_id"
+        end
+    end"#;
+
+  let (_dir, schema_path) = common::setup_test_schema();
+  fs::write(&schema_path, test_schema).unwrap();
+
+  // Read and parse
+  let contents = read_schema_file(schema_path.to_str().unwrap()).unwrap();
+  let tables = parse_tables(&contents);
+
+  // Verify the table was parsed correctly with all options
+  assert_eq!(tables.len(), 1);
+  assert_eq!(tables[0].name, "test_table");
+  assert!(tables[0].content.contains("id: :uuid"));
+  assert!(tables[0].content.contains("force: :cascade"));
+  assert!(tables[0].content.contains("index [\"related_id\"]"));
+}
